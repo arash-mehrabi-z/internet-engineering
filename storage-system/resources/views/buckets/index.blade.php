@@ -5,7 +5,7 @@
     <div class="row justify-content-center">
         <div class="col-md-8">
             <div class="card">
-                <div class="card-header">{{ __('Dashboard') }}</div>
+                <div class="card-header">{{ __('Buckets Index') }}</div>
 
                 <div class="card-body">
                     @if (session('status'))
@@ -14,10 +14,16 @@
                         </div>
                     @endif
 
-                    {{ __('You are logged in!') }}
+                    <div>
+                        <a href="{{ route('buckets.create') }}">Create a new bucket</a>
+                    </div>
                     <hr>
                     <div>
-                        <a href="{{ route('buckets.index') }}">Buckets</a>
+                        <div>{{ __('Your buckets:') }}</div>
+                        <br>
+                        @foreach ($buckets as $bucket)
+                            <div><a href="{{ route('buckets.show', ['bucket' => $bucket->id]) }}">{{ $bucket->name }}</a></div>
+                        @endforeach
                     </div>
                 </div>
             </div>

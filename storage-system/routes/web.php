@@ -13,10 +13,17 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
-Route::get('/', function () {
-    return view('auth.login');
-});
+Route::get('/', 'HomeController@index')->name('root');
 
 Auth::routes();
 
 Route::get('/home', 'HomeController@index')->name('home');
+
+// Route
+//     ::prefix('users/{user}')
+//     ->group( function() {
+//         Route::resource('buckets', 'BucketController');
+//     });
+
+Route::resource('buckets', 'BucketController');
+

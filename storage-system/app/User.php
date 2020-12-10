@@ -36,4 +36,12 @@ class User extends Authenticatable
     protected $casts = [
         'email_verified_at' => 'datetime',
     ];
+
+    /**
+     * Get the buckets for the user.
+     */
+    public function buckets()
+    {
+        return $this->hasMany('App\Bucket');
+    }
 }
