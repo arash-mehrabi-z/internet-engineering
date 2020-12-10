@@ -8,12 +8,10 @@
                 <div class="card-header">{{ __('Create a new bucket') }}</div>
 
                 <div class="card-body">
-                    @if (session('status'))
-                        <div class="alert alert-success" role="alert">
-                            {{ session('status') }}
-                        </div>
-                    @endif
-
+                    <div>
+                        <a href="{{ route('buckets.index') }}">Back to index</a>
+                    </div>
+                    <hr>
                     <form class="form" action="{{ route('buckets.store') }}" method="POST">
                         @csrf()
                         <div class="row">
