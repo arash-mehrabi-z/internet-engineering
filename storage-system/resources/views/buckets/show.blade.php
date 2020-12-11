@@ -29,7 +29,8 @@
                             <input type="submit" class="btn btn-danger" style="width: 100px; margin-top: 20px;" value="delete" />
                         </form>
                         <br>
-                        <a href="{{ route('buckets.edit', ['bucket' => $bucket->id]) }}" class="btn btn-primary">Edit the bucket</a>
+                        <a href="{{ route('buckets.edit', ['bucket' => $bucket->id]) }}" class="btn btn-primary">Edit the bucket</a><br><br>
+                        <a href="{{ route('files.index', ['bucket' => $bucket->id]) }}" class="btn btn-primary">Show bucket's files' index</a><br><br>
                     </div>
                 </div>
             </div>
