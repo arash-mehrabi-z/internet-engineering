@@ -13,4 +13,12 @@ class Bucket extends Model
     {
         return $this->belongsTo('App\User');
     }
+
+    /**
+     * Get the files for the bucket.
+     */
+    public function files()
+    {
+        return $this->hasMany('App\File');
+    }
 }

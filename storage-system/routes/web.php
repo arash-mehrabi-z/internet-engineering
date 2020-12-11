@@ -27,3 +27,10 @@ Route::get('/home', 'HomeController@index')->name('home');
 
 Route::resource('buckets', 'BucketController');
 
+Route
+    ::prefix('buckets/{bucket}')
+    ->group( function() {
+        Route::resource('files', 'FileController');
+
+        Route::get('files/{file}/download', 'FileController@download')->name('files.download');
+    });
