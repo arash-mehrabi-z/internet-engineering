@@ -9,6 +9,9 @@
 
                 <div class="card-body">
                     <div>
+                        <a href="{{ route('buckets.index') }}">Bucket's index</a>
+                    </div>
+                    <div>
                         <a href="{{ route('files.create', ['bucket' => $bucket->id]) }}">Create a new file</a>
                     </div>
                     <hr>
