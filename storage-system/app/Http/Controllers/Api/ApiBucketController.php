@@ -1,14 +1,16 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\Api;
 
 use App\Bucket;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use App\Http\Responses\ApiResponse;
+use App\Http\Controllers\Controller;
+use Validator;
 
-class BucketController extends Controller
+class ApiBucketController extends Controller
 {
     /**
      * Display a listing of the resource.
@@ -18,11 +20,11 @@ class BucketController extends Controller
     public function index()
     {
         // Get the currently authenticated user...
-        $user = Auth::user();
+        $user = auth('api')->user();
 
         $buckets = $user->buckets;
 
-        return view('buckets.index', ['buckets' => $buckets]);
+        return ApiResponse::success('', $buckets);
     }
 
     /**
@@ -32,7 +34,7 @@ class BucketController extends Controller
      */
     public function create()
     {
-        return view('buckets.create');
+
     }
 
     /**
@@ -48,7 +50,7 @@ class BucketController extends Controller
         ]);
 
         // Get the currently authenticated user...
-        $user = Auth::user();
+        $user = auth('api')->user();
 
         $bucket = new Bucket;
         $bucket->name = $request->name;
@@ -59,7 +61,7 @@ class BucketController extends Controller
         Storage::makeDirectory($directory);
 
         $buckets = $user->buckets;
-        return view('buckets.index', ['buckets' => $buckets]);
+        return ApiResponse::success('New bucket has been created successfully.', $buckets);
     }
 
     /**
@@ -70,7 +72,7 @@ class BucketController extends Controller
      */
     public function show(Bucket $bucket)
     {
-        return view('buckets.show', ['bucket' => $bucket]);
+
     }
 
     /**
@@ -81,7 +83,6 @@ class BucketController extends Controller
      */
     public function edit(Bucket $bucket)
     {
-        return view('buckets.edit', ['bucket' => $bucket]);
     }
 
     /**
@@ -101,9 +102,9 @@ class BucketController extends Controller
         $bucket->save();
 
         // Get the currently authenticated user...
-        $user = Auth::user();
+        $user = auth('api')->user();
         $buckets = $user->buckets;
-        return view('buckets.index', ['buckets' => $buckets]);
+        return ApiResponse::success('The bucket has been successfully editted.', $buckets);
     }
 
     /**
@@ -115,14 +116,19 @@ class BucketController extends Controller
     public function destroy(Bucket $bucket)
     {
         // Get the currently authenticated user...
-        $user = Auth::user();
+        $user = auth('api')->user();
         $directory = $directory = 'users/' . $user->id . '/' . $bucket->id;
 
-        Storage::deleteDirectory($directory);
+        $files = $bucket->files();
+        foreach ($files as $file) {
+            $file->delete();
+        }
 
         $bucket->delete();
 
+        Storage::deleteDirectory($directory);
+
         $buckets = $user->buckets;
-        return view('buckets.index', ['buckets' => $buckets]);
+        return ApiResponse::success('The bucket has been deleted.', $buckets);
     }
 }

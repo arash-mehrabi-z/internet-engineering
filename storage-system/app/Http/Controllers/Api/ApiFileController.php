@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\Api;
 
 use App\Bucket;
 use App\File;
@@ -10,8 +10,10 @@ use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Storage;
 use Ramsey\Http\Range\Exception\NoRangeException;
 use Ramsey\Http\Range\Range;
+use App\Http\Controllers\Controller;
+use App\Http\Responses\ApiResponse;
 
-class FileController extends Controller
+class ApiFileController extends Controller
 {
     /**
      * Display a listing of the resource.
@@ -22,7 +24,7 @@ class FileController extends Controller
     {
         $user_bucket = $this->checkIfUserIsAuthorized($bucket);
         $files = $user_bucket->files;
-        return view('files.index', ['bucket' => $user_bucket, 'files' => $files]);
+        return ApiResponse::success('', $files);
     }
 
     /**
@@ -32,8 +34,6 @@ class FileController extends Controller
      */
     public function create(Bucket $bucket)
     {
-        $user_bucket = $this->checkIfUserIsAuthorized($bucket);
-        return view('files.create', ['bucket' => $user_bucket]);
     }
 
     /**
@@ -45,14 +45,12 @@ class FileController extends Controller
     public function store(Request $request, Bucket $bucket)
     {
         $user_bucket = $this->checkIfUserIsAuthorized($bucket);
-
         $validatedData = $request->validate([
             'name' => 'required|max:255',
             'file' => 'required|file',
         ]);
-
         // Get the currently authenticated user...
-        $user = Auth::user();
+        $user = auth('api')->user();
         $directory = 'users/' . $user->id . '/' . $bucket->id;
         $path = $request->file('file')->store($directory);
         $path = Storage::putFile($directory, $request->file('file'));
@@ -64,7 +62,7 @@ class FileController extends Controller
         $file->save();
 
         $files = $user_bucket->files;
-        return view('files.index', ['bucket' => $bucket, 'files' => $files]);
+        return ApiResponse::success('New file has been created.', $files);
 
     }
 
@@ -77,7 +75,8 @@ class FileController extends Controller
     public function show(Bucket $bucket, File $file)
     {
         $user_bucket = $this->checkIfUserIsAuthorized($bucket);
-        return view('files.show', ['bucket' => $bucket, 'file' => $file]);
+
+        return Storage::download($file->path);
     }
 
     /**
@@ -88,8 +87,6 @@ class FileController extends Controller
      */
     public function edit(Bucket $bucket, File $file)
     {
-        $user_bucket = $this->checkIfUserIsAuthorized($bucket);
-        return view('files.edit', ['bucket' => $bucket, 'file' => $file]);
     }
 
     /**
@@ -111,7 +108,7 @@ class FileController extends Controller
         $file->save();
 
         $files = $user_bucket->files;
-        return view('files.index', ['bucket' => $bucket, 'files' => $files]);
+        return ApiResponse::success('The file has been editted.', $files);
     }
 
     /**
@@ -129,7 +126,7 @@ class FileController extends Controller
         $file->delete();
 
         $files = $user_bucket->files;
-        return view('files.index', ['bucket' => $bucket, 'files' => $files]);
+        return ApiResponse::success('The file has been deleted with a success.', $files);
     }
 
     /**
@@ -145,47 +142,15 @@ class FileController extends Controller
         return Storage::download($file->path);
     }
 
-    /**
-     * Stream the specified resource from storage.
-     *
-     * @param  \App\File  $file
-     * @return \Illuminate\Http\Response
-     */
-    public function stream(Request $request, Bucket $bucket, File $file)
-    {
-        echo $request->hasHeader('Range') ? "Yes" : "No";
-        // dd($request);
-        // $filePath = base_path() . "/storage/app/" . $file->path;
-        // $filePieces = [];
-
-        // $range = new Range($request, filesize($filePath));
-
-        // try {
-        //     // getRanges() always returns an iterable collection of range values,
-        //     // even if there is only one range, as is the case in this example.
-        //     foreach ($range->getUnit()->getRanges() as $rangeValue) {
-        //         $filePieces[] = file_get_contents(
-        //             $filePath,
-        //             false,
-        //             null,
-        //             $rangeValue->getStart(),
-        //             $rangeValue->getLength()
-        //         );
-        //     }
-        // } catch (NoRangeException $e) {
-        //     // This wasn't a range request or the `Range` header was empty.
-        // }
-    }
-
     public function checkIfUserIsAuthorized(Bucket $bucket)
     {
         // Get the currently authenticated user...
-        $user = Auth::user();
+        $user = auth('api')->user();
 
         $user_bucket = $user->buckets()->where('id', $bucket->id)->first();
 
         if ( is_null($user_bucket) ) {
-            abort(403, 'You are trying to access other users\' bucket or this bucket doens not exist.');
+            return ApiResponse::error('You are trying to access other users\' bucket or this bucket doens not exist.', [], 403);
         }
 
         return $user_bucket;

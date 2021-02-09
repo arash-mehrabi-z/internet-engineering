@@ -1,0 +1,213 @@
+\documentclass[12pt]{article}
+
+\usepackage[utf8]{inputenc}
+\usepackage{hyperref}
+\usepackage{geometry}
+
+\geometry{
+    a4paper,
+    total={170mm,257mm},
+    left=20mm,
+    top=20mm,
+}
+\hypersetup{
+    colorlinks=true,
+    linkcolor=blue,
+    filecolor=magenta,      
+    urlcolor=cyan,
+}
+
+\title{Deployment}
+\date{\today}
+\author{Arash Mehrabi}
+\begin{document}
+
+\begin{titlepage}
+\maketitle
+\end{titlepage}
+
+\section{Server Requirements}
+We have used Laravel 7 for developing this project so you need to make sure that your server meets the following requirements:
+
+\noindent For Laravel:
+\begin{itemize}
+    \item PHP \textgreater = 7.2.5
+    \item BCMath PHP Extension
+    \item Ctype PHP Extension
+    \item Fileinfo PHP extension
+    \item JSON PHP Extension
+    \item Mbstring PHP Extension
+    \item OpenSSL PHP Extension
+    \item PDO PHP Extension
+    \item Tokenizer PHP Extension
+    \item XML PHP Extension
+    \item Composer PHP Package Manager
+\end{itemize}
+
+\noindent For database you should use MySql:
+\begin{itemize}
+    \item MySql \textgreater = 5.7.31
+\end{itemize}
+
+\noindent Operating System:
+\begin{itemize}
+    \item For operating system you can use anything (MAC, Linux, Windows, etc.) but you should be able to setup server on that machine.
+    \item You should probably have superuser privileges.
+    \item We recommend using Linux.
+\end{itemize}
+\noindent For web server:
+\begin{itemize}
+    \item We recommend using Nginx if you are going to deploy it on a real server but you can use apache or any other web server too.
+\end{itemize}
+
+\section{Install Prerequistes}
+General:
+\begin{verbatim}
+    sudo apt update
+    sudo apt install -y git curl wget zip unzip
+\end{verbatim}
+Nginx:
+\begin{verbatim}
+    sudo apt install nginx
+    sudo ufw allow 'Nginx HTTP'
+\end{verbatim}
+MySql:
+\begin{verbatim}
+    sudo apt install mysql-server
+\end{verbatim}
+PHP:
+\begin{verbatim}
+    sudo apt install php7.4 php7.4-fpm php7.4-mysql php-common php7.4-cli php7.4-common php7.4-json php7.4-opcache php7.4-readline php7.4-mbstring php7.4-xml php7.4-gd php7.4-curl
+\end{verbatim}
+Composer:
+\begin{verbatim}
+    curl -sS https://getcomposer.org/installer | php
+    sudo mv composer.phar /usr/local/bin/composer
+    # this make the composer executable -> 
+    sudo chmod +x /usr/local/bin/composer
+\end{verbatim}
+\section{How to deploy?}
+\subsection{Clone}
+After installing the requirements, first clone the code in an arbitrary directory by directing to your directory and entering the command:
+\begin{verbatim}
+    git clone [address of the repository]
+\end{verbatim}
+Then move the cloned repository to \verb|/var/www/html|. Now we are done with cloning.
+\subsection{Ownership \& Permissions}
+We need to change ownership \& permissions of the files of the project so the server can read \& write necessary files. Simultaneously we should avoid giving too much freedom to our web server so hackers could harm our server.
+
+You should own all of the directories and files by your user. Enter the command:
+\begin{verbatim}
+    sudo chown -R my-user:www-data /path/to/your/laravel/root/directory
+\end{verbatim}
+Then give both your user and web server required permissions:
+\begin{verbatim}
+    sudo find /path/to/your/laravel/root/directory -type f -exec chmod 664 {} \;
+    sudo find /path/to/your/laravel/root/directory -type d -exec chmod 775 {} \;
+\end{verbatim}
+Then you need to give read and write permissions to the web server for storage, cache and any other directories the web server needs to upload or write too (depending on your situation), so run the commands:
+\begin{verbatim}
+    sudo chgrp -R www-data storage bootstrap/cache
+    sudo chmod -R ug+rwx storage bootstrap/cache
+\end{verbatim}
+Now, you're secure and your website works and you can work with the files fairly easily.\footnote{For more information please visit: \href{https://stackoverflow.com/a/37266353}{bgies' answer on stackoverflow}}
+
+\subsection{Setup Nginx}
+First you need to change the group ownership of the \verb|storage| and \verb|bootstrap/cache| directories to \textbf{www-data}.
+\begin{verbatim}
+    sudo chgrp -R www-data storage bootstrap/cache
+\end{verbatim}
+Then recursively grant all permissions, including write and execute, to the group.
+\begin{verbatim}
+    sudo chmod -R ug+rwx storage bootstrap/cache
+\end{verbatim}
+Now we have granted all necessary privileges. Next we should create a new server blog config file by copying over the default file.
+\begin{verbatim}
+    sudo cp /etc/nginx/sites-available/default /etc/nginx/sites-available/example.com
+\end{verbatim}
+Open the newly created configuration file.
+\begin{verbatim}
+    sudo nano /etc/nginx/sites-available/example.com
+\end{verbatim}
+In this file you need change a few things:
+\begin{itemize}
+    \item Removing the \verb|default_server| designation from listen directives,
+    \item Updating the web root by changing the \verb|root| directive,
+    \item Updating the the \verb|server_name| directive to correctly point to a domain name for the server,
+    \item Updating the request URI handling by changing the \verb|try_files| directive.
+\end{itemize}
+The modified Nginx configuration file will look like this:
+\begin{verbatim}
+    server {
+    listen 80;
+    listen [::]:80;
+
+    . . .
+
+    root /var/www/html/quickstart/public;
+    index index.php index.html index.htm index.nginx-debian.html;
+
+    server_name example.com www.example.com;
+
+    location / {
+        try_files $uri $uri/ /index.php?$query_string;
+    }
+
+    . . .
+}
+\end{verbatim}
+Then save \& close the file. Now we should enable this new configuration by creating a symbolic link to the \verb|sites_enabled| directory.
+\begin{verbatim}
+    sudo ln -s /etc/nginx/sites-available/example.com /etc/nginx/sites-enabled/
+\end{verbatim}
+And finally reload the Nginx to apply the changes.\footnote{For more information you can check: \href{https://www.digitalocean.com/community/tutorials/how-to-deploy-a-laravel-application-with-nginx-on-ubuntu-16-04\#step-5-\%E2\%80\%94-configuring-nginx}{Digital Ocean}}
+\begin{verbatim}
+    sudo systemctl reload nginx
+\end{verbatim}
+Now website has been deployed and if you access it from your server's IP you will see the first page of the website! Or if you had deployed it in your local machine you can access it from \verb|localhost|.
+
+\subsection{Installing Application}
+Now we need to install the application. Run MySql by typing:
+\begin{verbatim}
+    mysql -u [your user] -p
+\end{verbatim}
+Then type your MySql's username's password and then create a database for this application by entering:
+\begin{verbatim}
+    CREATE DATABASE [an arbitrary name here];
+\end{verbatim}
+After this quit mysql and go to the project's directory.
+
+Copy the \verb|.env.example| file by typing:
+\begin{verbatim}
+    cp .env.example .env
+\end{verbatim}
+then edit the \verb|.env| file and enter database's information there.
+
+It should be like this:
+\begin{verbatim}
+    DB_CONNECTION=mysql
+    DB_HOST=127.0.0.1
+    DB_PORT=3306
+    DB_DATABASE=[your database name]
+    DB_USERNAME=[your mysql user]
+    DB_PASSWORD=[your mysql password]
+\end{verbatim}
+Then again route to Laravel's directory and type:
+\begin{verbatim}
+    composer install
+\end{verbatim}
+to install the dependencies of Laravel application.
+
+Then run:
+\begin{verbatim}
+    php artisan key:generate
+\end{verbatim}
+to generate a key for your Laravel application.
+
+Now everything is configured. You should let Laravel to create necessary tables in your database by typing:
+\begin{verbatim}
+    php artisan migrate
+\end{verbatim}
+Congratulations! Now the web application has been installed on your machine.
+
+\end{document}

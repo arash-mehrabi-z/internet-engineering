@@ -19,12 +19,6 @@ Auth::routes();
 
 Route::get('/home', 'HomeController@index')->name('home');
 
-// Route
-//     ::prefix('users/{user}')
-//     ->group( function() {
-//         Route::resource('buckets', 'BucketController');
-//     });
-
 Route::resource('buckets', 'BucketController');
 
 Route
@@ -33,4 +27,6 @@ Route
         Route::resource('files', 'FileController');
 
         Route::get('files/{file}/download', 'FileController@download')->name('files.download');
+
+        Route::get('files/{file}/stream', 'FileController@stream')->name('files.stream');
     });
